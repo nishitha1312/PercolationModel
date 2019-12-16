@@ -1,64 +1,79 @@
+import edu.princeton.cs.algs4.StdOut;
+import edu.princeton.cs.algs4.StdRandom;
+import edu.princeton.cs.algs4.StdStats;
+
+/**
+ * @author Dima Pasieka
+ */
 public class PercolationStats {
-    private double[] x;
-    private int experiments;
-    
-    // perform T independent computational experiments on an N-by-N grid
-    public PercolationStats(int N, int T)
-    {
-        experiments = T;
-        if (N <= 0 || T <= 0) {
-            throw new IllegalArgumentException("Given N <= 0 || T <= 0");
+
+    // Number of independent experiments on an n-by-n grid
+    private int trials;
+
+    // Store all threshold results
+    private double[] thresholdList;
+
+    // Perform trials independent experiments on an n-by-n grid
+    public PercolationStats(int n, int trials) {
+        if (n < 1) {
+            throw new IllegalArgumentException("Grid must have at least one row and column");
         }
 
-        x = new double[experiments];
-        for (int t = 0; t < experiments; t++)
-        {
-            int numOfOpens = 0;
-            Percolation pc = new Percolation(N);
-            while (!pc.percolates())
-            {
-                int i = StdRandom.uniform(1, N+1);
-                int j = StdRandom.uniform(1, N+1);
-                if (!pc.isOpen(i, j) && !pc.isFull(i, j)) {
-                    pc.open(i, j);
-                    numOfOpens++;
-                }
+        if (trials < 1) {
+            throw new IllegalArgumentException("You must run percolation at least once");
+        }
+
+        this.trials = trials;
+        thresholdList = new double[trials];
+
+        for (int i = 0; i < trials; i++) {
+            Percolation percolation = new Percolation(n);
+
+            while (!percolation.percolates()) {
+                int row = StdRandom.uniform(1, n + 1);
+                int col = StdRandom.uniform(1, n + 1);
+
+                percolation.open(row, col);
             }
-            x[t] = (double) numOfOpens/(N*N);
-        }  
+
+            thresholdList[i] = (double) percolation.numberOfOpenSites() / (n * n);
+        }
     }
 
-    // sample mean of percolation threshold
+    // Sample mean of percolation threshold
     public double mean()
     {
-        return StdStats.mean(x);
+        return StdStats.mean(thresholdList);
     }
-    
-    // sample standard deviation of percolation threshold    
+
+    // Sample standard deviation of percolation threshold
     public double stddev()
     {
-        return StdStats.stddev(x);
+        return StdStats.stddev(thresholdList);
     }
-    
-    // returns lower bound of the 95% confidence interval
+
+    // Low  endpoint of 95% confidence interval
     public double confidenceLo()
     {
-        return mean() - ((1.96 * stddev()) / Math.sqrt(experiments));       
+        return mean() - (1.96 * stddev() / Math.sqrt(trials));
     }
-    
-    // returns upper bound of the 95% confidence interval
+
+    // High endpoint of 95% confidence interval
     public double confidenceHi()
     {
-        return mean() + ((1.96 * stddev()) / Math.sqrt(experiments));       
+        return mean() + (1.96 * stddev() / Math.sqrt(trials));
     }
-    
+
+    // Test client
     public static void main(String[] args)
     {
-        PercolationStats ps = new PercolationStats(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
-        
-        String confidence = ps.confidenceLo() + ", " + ps.confidenceHi();
-        StdOut.println("mean                    = " + ps.mean());
-        StdOut.println("stddev                  = " + ps.stddev());
-        StdOut.println("95% confidence interval = " + confidence);       
+        int gridLength = Integer.parseInt(args[0]);
+        int trials = Integer.parseInt(args[1]);
+
+        PercolationStats stats = new PercolationStats(gridLength, trials);
+
+        StdOut.println("mean = "+ stats.mean());
+        StdOut.println("stddev = "+ stats.stddev());
+        StdOut.println("95% confidence interval = "+ stats.confidenceLo() + ", " + stats.confidenceHi());
     }
 }
